@@ -50,4 +50,3 @@ export function MCCVideo({videoSrc, musicSrc, plan, words, captions, format, fit
     {plan.hook && frame < 100 && <div style={{position: 'absolute', top: wide ? 150 : 240, left: 64, right: 64, opacity: interpolate(frame, [0, 8, 85, 100], [0, 1, 1, 0], {extrapolateRight: 'clamp'}), fontSize: wide ? 62 : 76, fontWeight: 700, lineHeight: 1.05, textShadow: '0 3px 24px #000'}}>{plan.hook}</div>}
   </AbsoluteFill>;
 }
-

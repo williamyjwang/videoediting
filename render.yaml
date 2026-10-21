@@ -26,4 +26,3 @@ services:
         generateValue: true
       - key: MCC_OPENAI_API_KEY
         sync: false
-

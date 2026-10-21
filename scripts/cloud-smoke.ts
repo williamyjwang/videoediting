@@ -81,4 +81,3 @@ try {
   console.log('PASS: private sign-in/media/downloads, browser closed, server restarted, durable queued render completed, and a new browser session found/downloaded the result.');
   console.log(`Evidence: ${directory}`);
 } finally {await browser?.close(); await stop();}
-

@@ -146,4 +146,3 @@ app.listen(port, process.env.MCC_HOST || (process.env.NODE_ENV === 'production' 
   startWorker(queue);
   console.log(`MCC Studio API listening on port ${port}`);
 });
-

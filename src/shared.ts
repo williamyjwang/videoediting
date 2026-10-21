@@ -77,4 +77,3 @@ export function tightenPlan(plan: EditPlan, words: Word[]): EditPlan {
   }
   return segments.length <= 40 ? {...plan, segments} : plan;
 }
-

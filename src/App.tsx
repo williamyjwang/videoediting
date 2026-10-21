@@ -160,4 +160,3 @@ export function App({onSignOut}: {onSignOut: () => void}) {
     </main>
   </div>;
 }
-

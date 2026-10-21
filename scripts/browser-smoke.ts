@@ -43,4 +43,3 @@ try {
   assert.deepEqual(errors, []);
   console.log('PASS: studio loads, sample project, Remotion preview, hook and bilingual subtitle editing, overlap protection, output presets, undo/redo, SRT download, reload persistence, and mobile layout. No browser exceptions.');
 } finally {await browser.close();}
-

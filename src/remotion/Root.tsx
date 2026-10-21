@@ -7,4 +7,3 @@ function Root() {
   return <Composition id="MCCVideo" component={MCCVideo} width={1080} height={1920} fps={FPS} durationInFrames={150} defaultProps={defaults} calculateMetadata={({props}) => ({durationInFrames: durationFrames(props.plan), ...outputSize(props.format)})}/>;
 }
 registerRoot(Root);
-

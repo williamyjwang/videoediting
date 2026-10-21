@@ -53,4 +53,3 @@ export async function bilingualCaptions(client: OpenAI, words: Word[], duration:
   if (translated.length !== source.length || translated.some((c, i) => c.id !== String(i))) throw new Error('Translation returned mismatched captions. No subtitles were saved; please retry.');
   return validateCaptions(translated.map((c, i) => ({...c, start: groups[i][0].start, end: groups[i].at(-1)!.end})), duration);
 }
-
