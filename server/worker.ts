@@ -3,7 +3,7 @@ import {rm} from 'node:fs/promises';
 import {type Project} from '../src/shared';
 import {generateEdit} from './ai';
 import {extractAudio} from './media';
-import {dataDir, mediaDir, saveProject} from './store';
+import {dataDir, mediaDir, readProject, saveProject} from './store';
 import {renderProject} from './render';
 import {type JobQueue} from './queue';
 
@@ -21,10 +21,13 @@ export function startWorker(queue: JobQueue) {
       project.error = undefined;
       if (job.kind === 'render') project.exportUrl = await renderProject(project);
       else {
+        // Preserve successful transcription across a later translation/planner failure.
+        const saved = await readProject(project.id);
+        if (!project.words.length && saved.video.id === project.video.id) project.words = saved.words;
         const audio = path.join(dataDir, 'tmp', `${job.id}.mp3`);
         try {
           await extractAudio(path.join(mediaDir, path.basename(project.video.url)), audio);
-          Object.assign(project, await generateEdit(project, audio));
+          Object.assign(project, await generateEdit(project, audio, {onTranscript: async words => {project.words = words; await saveProject(project);}}));
           project.exportUrl = undefined;
         } finally {await rm(audio, {force: true});}
       }

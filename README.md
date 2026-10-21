@@ -1,6 +1,6 @@
 # Main Character Club · Content Studio
 
-A private editing studio built with React, Codex, FFmpeg, and Remotion. Upload coaching footage, generate or manually write an edit plan, review a vertical preview, and render an MP4. The cloud version keeps working after you close the browser: sign back in and open **Saved projects** for the result.
+A private editing studio built with React, Codex, FFmpeg, and Remotion. Upload coaching footage, generate or manually write an edit plan, generate bilingual subtitles with a full-length preview, and render an MP4. The cloud version keeps working after you close the browser: sign back in and open **Saved projects** for the result.
 
 **For cloud use, no local installation is required.** See [Cloud deployment](docs/CLOUD-DEPLOYMENT.md). The Docker image and Render blueprint are prepared; connecting the hosting service, entering secure credentials, and verifying the deployment are still needed. Local instructions below are for development.
 
@@ -19,10 +19,10 @@ Vite uses port 5173; the API uses port 3001. Alternatively, `npm run build && np
 ## Editing a video
 
 1. Upload up to 20 minutes / 2 GB of raw footage. H.264 MP4 with AAC audio is recommended for consistent browser playback. MOV, WebM, MKV, and M4V containers are also accepted; codec support depends on the browser.
-2. Add a creative brief and target length. Choose **Generate AI edit**, or **Create a manual cut** without an AI key.
-3. Review the source in/out points, opening hook, labels, and transcript. Change the plan and save it. AI edits use only timestamped speech for captions and split long pauses.
+2. Keep **Subtitles only · keep the full video** (default), then choose **Generate bilingual subtitles**. For conservative cleanup, choose **Light trim · preserve the full explanation**. There is no target-length selector. Manual editing works without an AI key.
+3. Review the source in/out points, opening hook, labels, and transcript. Change the plan and save it. Caption-only keeps the whole source; optional light trimming preserves the complete explanation. All aspect ratios support up to 20 minutes.
 4. Optionally upload music you have rights to use. The track loops beneath source audio at a fixed 10% volume; this is not loudness normalization or automatic music discovery.
-5. Render, then download the 1080×1920, 30 fps H.264 MP4. Check framing, subtitles, and music levels before sharing.
+5. Render, then download the selected 9:16, 16:9 or 3:4, 30 fps H.264 MP4. Check framing, subtitles, and music levels before sharing.
 
 **Explore with a sample** creates synthetic footage and demonstration captions; it does not call an AI service or represent a real coaching session.
 
@@ -30,12 +30,12 @@ Vite uses port 5173; the API uses port 3001. Alternatively, `npm run build && np
 
 Copy `.env.example` to `.env` and supply `MCC_OPENAI_API_KEY` securely, or bind that variable in cloud environment settings. Never commit `.env` or put a key in the browser. Restart the server after changes.
 
-Audio is extracted locally and submitted to OpenAI's `whisper-1` transcription endpoint. The timestamped transcript and brief go to the configured planner:
+Audio is extracted locally and submitted to [OpenAI's timestamped transcription endpoint](https://developers.openai.com/api/docs/guides/speech-to-text#timestamps), using the existing `whisper-1` adapter. Both English and Chinese are generated for each cue, including mixed-language speech. Translation and automatic cultural/meaning review receive the whole transcript in bounded batches. Caption-only skips planning. Optional light trimming sends the timestamped transcript and brief to the configured planner:
 
 - `MCC_EDIT_PROVIDER=codex` (default): invokes `codex exec` in a read-only sandbox with an explicit JSON output schema. It receives the transcript over stdin and returns an edit plan without needing shell/file tools. The server's API binding is supplied to the non-interactive CLI as `CODEX_API_KEY`; an existing CLI login can also be used when that binding is absent. No generated commands or code are executed by the editor. The CLI's configured/default model is used.
 - `MCC_EDIT_PROVIDER=openai`: uses the Responses API directly; `MCC_EDIT_MODEL` defaults to `gpt-4.1-mini`.
 
-Both planners validate source boundaries, clip lengths, ordering, and a 3-minute output maximum before making the plan available for review. Model-produced captions are not invented; captions come from the transcription. AI selects moments using speech, not visual scene understanding. API usage can incur costs. Codex authentication is separate from the transcription API key.
+Both planners validate source boundaries and chronological cuts. Light trim has no target duration; a proposal retaining less than 80% of source runtime or 90% of transcript words falls back to the full video. Caption-only always uses the whole source. Automatic translation/review aims for idiomatic North American English and natural Simplified Chinese without changing the speaker's meaning or inventing context. Transcript recognition, cut relevance, and translation quality still need live evaluation. API usage can incur costs for full audio duration and translation/review passes.
 
 Allow `api.openai.com` for transcription/API planning. Codex needs access to the destinations required by its configured authentication/provider. The UI and manual rendering run without these credentials. Neither live AI transcription nor Codex planning has been validated in this environment because no transcription key is present.
 
@@ -58,6 +58,7 @@ With the API running:
 npm test                # edit-plan validation and pause tightening
 npm run build           # TypeScript + production bundle
 npm run smoke           # actual upload, music, multi-cut Remotion render, ffprobe assertions
+npm run test:api        # private API, persistence, real ten-minute upload in all formats
 npm run test:browser    # Chromium: sample, preview, edit/save, mobile overflow
 npm run test:cloud      # isolated private server: sign in, close browser, restart, recover render
 ```
@@ -68,4 +69,4 @@ The smoke check creates synthetic footage, uploads it, rejects an invalid cut an
 
 Uploads, project JSON, exports, and the SQLite job queue live under `MCC_DATA_DIR` (ignored `.data/` by default; `/var/data` on the cloud persistent disk). Keep this directory to retain projects. **Saved projects** lists work across browser sessions/devices. A serial server worker runs jobs independently of the browser; pending jobs survive a restart, and an interrupted running job is retried once. This design supports a single always-on service instance, not multiple replicas.
 
-This version supports private studio sign-in, saved project browsing, durable background jobs, one source video per project, vertical center-crop output, English/Chinese fonts, manually adjustable cuts/hooks/labels, speech captions, uploaded music, and download. It does not yet provide face tracking, caption correction, horizontal output, generated B-roll, automatic publishing, or resumable uploads. All signed-in users share one owner's workspace; per-user accounts/storage are needed for a multi-tenant product. Production refuses to start without a strong studio password and session secret. Use HTTPS, the persistent disk, and the deployment settings in the cloud guide.
+This version supports private studio sign-in, saved project browsing, durable background jobs, one source video per project, vertical/horizontal/portrait output with contain/crop framing, English/Chinese fonts, manually adjustable cuts/hooks/labels and bilingual subtitles, automatic contextual translation/review, uploaded music, and download. It does not yet provide face tracking, generated B-roll, automatic publishing, or resumable uploads. All signed-in users share one owner's workspace; per-user accounts/storage are needed for a multi-tenant product. Production refuses to start without a strong studio password and session secret. Use HTTPS, the persistent disk, and the deployment settings in the cloud guide.

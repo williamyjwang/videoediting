@@ -1,13 +1,15 @@
 import {z} from 'zod';
 
 export const FPS = 30;
+export const editModeSchema = z.enum(['captions', 'polish']);
+export type EditMode = z.infer<typeof editModeSchema>;
 export const MAX_SOURCE_SECONDS = 20 * 60;
 export const outputSchema = z.enum(['vertical', 'landscape', 'portrait']);
 export type OutputFormat = z.infer<typeof outputSchema>;
 export const outputSize = (format: OutputFormat = 'vertical') => format === 'landscape' ? {width: 1920, height: 1080} : format === 'portrait' ? {width: 1080, height: 1440} : {width: 1080, height: 1920};
 export const captionSchema = z.object({id: z.string().min(1).max(80), start: z.number().nonnegative(), end: z.number().positive(), en: z.string().max(500), zh: z.string().max(500)}).strict();
 export type Caption = z.infer<typeof captionSchema>;
-export const projectEditSchema = z.object({captions: z.array(captionSchema).max(3000), format: outputSchema, fit: z.enum(['contain', 'cover']), feedback: z.string().max(6000)}).strict();
+export const projectEditSchema = z.object({captions: z.array(captionSchema).max(3000), format: outputSchema, fit: z.enum(['contain', 'cover']), feedback: z.string().max(6000), editMode: editModeSchema.optional()}).strict();
 export function validateCaptions(input: unknown, duration: number): Caption[] {
   const captions = z.array(captionSchema).max(3000).parse(input);
   const ids = new Set<string>();
@@ -28,17 +30,18 @@ export const segmentSchema = z.object({
 export const planSchema = z.object({
   title: z.string().min(1).max(100),
   hook: z.string().max(140),
-  segments: z.array(segmentSchema).min(1).max(40),
+  segments: z.array(segmentSchema).min(1).max(300),
 }).strict();
 export type EditPlan = z.infer<typeof planSchema>;
 export type Word = {word: string; start: number; end: number};
 export type Media = {id: string; name: string; url: string; duration: number; kind: 'video' | 'music'};
 export type Project = {
   id: string; createdAt: string; video: Media; music?: Media;
-  brief: string; targetSeconds: number; status: 'idle' | 'analyzing' | 'rendering';
+  brief: string; editMode?: EditMode; targetSeconds?: number; status: 'idle' | 'analyzing' | 'rendering';
   plan?: EditPlan; words: Word[]; error?: string; exportUrl?: string;
   progress?: number;
   captions?: Caption[]; format?: OutputFormat; fit?: 'contain' | 'cover'; feedback?: string;
+  captionReview?: 'automatic'; editNotice?: string;
 };
 export type VideoProps = {videoSrc: string; musicSrc?: string; plan: EditPlan; words: Word[]; captions?: Caption[]; format?: OutputFormat; fit?: 'contain' | 'cover'};
 export const framesForSegment = (segment: {start: number; end: number}) =>
@@ -51,8 +54,7 @@ export function validatePlan(input: unknown, sourceDuration: number, format: Out
     if (segment.end <= segment.start || segment.end - segment.start < 0.2) throw new Error('Each cut must be at least 0.2 seconds long.');
     if (segment.end > sourceDuration + 0.02) throw new Error('A cut extends beyond the source footage.');
   }
-  const limit = format === 'landscape' ? MAX_SOURCE_SECONDS : 180;
-  if (durationFrames(plan) > limit * FPS) throw new Error(format === 'landscape' ? 'Keep the finished edit under 20 minutes.' : 'Keep the finished edit under 3 minutes.');
+  if (durationFrames(plan) > MAX_SOURCE_SECONDS * FPS) throw new Error('Keep the finished edit under 20 minutes.');
   return plan;
 }
 
@@ -75,5 +77,25 @@ export function tightenPlan(plan: EditPlan, words: Word[]): EditPlan {
     }
     segments.push({start, end: Math.min(clip.end, end + 0.15), label: clip.label});
   }
-  return segments.length <= 40 ? {...plan, segments} : plan;
+  return segments.length <= 300 ? {...plan, segments} : plan;
+}
+
+// Aspect ratio is independent of editorial duration. Caption-only never selects highlights.
+export function fullLengthPlan(duration: number, title = 'MCC video'): EditPlan {
+  return validatePlan({title: title.trim().slice(0, 100) || 'MCC video', hook: '', segments: [{start: 0, end: duration, label: ''}]}, duration);
+}
+
+// Light trimming is optional. Fall back to the whole source rather than silently
+// accepting a highlight reel or losing most of the spoken explanation.
+export function conservativePlan(input: unknown, sourceDuration: number, words: Word[]): {plan: EditPlan; editNotice?: string} {
+  const candidate = validatePlan(input, sourceDuration);
+  for (let i = 1; i < candidate.segments.length; i++) {
+    if (candidate.segments[i].start < candidate.segments[i - 1].end) throw new Error('The model selected overlapping or reordered moments.');
+  }
+  const spoken = words.filter(w => w.end > w.start);
+  const retained = spoken.filter(w => candidate.segments.some(s => s.start <= w.start + 0.02 && s.end >= w.end - 0.02));
+  if (durationFrames(candidate) < sourceDuration * FPS * .8 || (spoken.length && retained.length / spoken.length < .9)) {
+    return {plan: fullLengthPlan(sourceDuration, candidate.title), editNotice: 'The suggested trim removed too much material. Your full video was retained with bilingual subtitles.'};
+  }
+  return {plan: candidate};
 }

@@ -26,11 +26,11 @@ test('subtitle exports trim and retime captions to the actual cut sequence', () 
   assert.deepEqual(result.map(c => [c.start, c.end]), [[0, 0.5], [0.5, 2.5], [2.5, 3.5]]);
   assert.deepEqual(result.map(c => c.zh), [cues[0].zh, cues[1].zh, cues[0].zh]);
 });
-test('horizontal edits support long form while short presets retain their duration limit', () => {
+test('all output aspect ratios retain full-length videos', () => {
   const plan: EditPlan = {title: 'Long form', hook: '', segments: [{start: 0, end: 600, label: ''}]};
   assert.doesNotThrow(() => validatePlan(plan, 600, 'landscape'));
-  assert.throws(() => validatePlan(plan, 600, 'vertical'), /3 minutes/);
-  assert.throws(() => validatePlan(plan, 600, 'portrait'), /3 minutes/);
+  assert.doesNotThrow(() => validatePlan(plan, 600, 'vertical'));
+  assert.doesNotThrow(() => validatePlan(plan, 600, 'portrait'));
 });
 
 test('subtitle QA flags speech omissions and empty languages, while allowing silent gaps', async () => {

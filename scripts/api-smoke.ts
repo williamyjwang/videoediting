@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import {spawn, type ChildProcess} from 'node:child_process';
+import {execFile, spawn, type ChildProcess} from 'node:child_process';
 import {randomBytes} from 'node:crypto';
-import {mkdir, mkdtemp, readFile} from 'node:fs/promises';
+import {mkdir, mkdtemp, readFile, writeFile} from 'node:fs/promises';
 import path from 'node:path';
+import {promisify} from 'node:util';
 import type {Project} from '../src/shared';
 
 // No AI calls or browser processes. Tests persistence and private API boundaries.
@@ -15,7 +16,7 @@ const base = `http://127.0.0.1:${port}`;
 let child: ChildProcess | undefined;
 let logs = '';
 async function start() {
- child = spawn(process.execPath, ['--import', 'tsx', 'server/index.ts'], {env: {...process.env, NODE_ENV: 'production', MCC_HOST: '127.0.0.1', PORT: port, MCC_DATA_DIR: directory, MCC_ADMIN_PASSWORD: password, MCC_SESSION_SECRET: secret, MCC_OPENAI_API_KEY: '', OPENAI_API_KEY: ''}, stdio: ['ignore', 'pipe', 'pipe']});
+ child = spawn(process.execPath, ['--import', 'tsx', 'server/index.ts'], {env: {...process.env, NODE_ENV: 'production', MCC_HOST: '127.0.0.1', PORT: port, MCC_DATA_DIR: directory, MCC_ADMIN_PASSWORD: password, MCC_SESSION_SECRET: secret, MCC_OPENAI_API_KEY: '', OPENAI_API_KEY: '', MCC_AI_MAX_SOURCE_SECONDS: '60'}, stdio: ['ignore', 'pipe', 'pipe']});
  child.stdout!.on('data', c => logs += c); child.stderr!.on('data', c => logs += c);
  for (let i = 0; i < 100; i++) {
   if (child.exitCode !== null) throw new Error(`API stopped: ${logs}`);
@@ -44,10 +45,31 @@ try {
  const form = new FormData(); form.append('video', new Blob([bytes], {type: 'video/mp4'}), 'uploaded-sample.mp4');
  const upload = await fetch(base + '/api/projects', {method: 'POST', headers: {Cookie: cookie}, body: form}); assert.equal(upload.status, 201);
  assert.equal((await upload.json()).video.name, 'uploaded-sample.mp4');
+ // An actual ten-minute media file, rather than metadata standing in for footage.
+ const longFile=path.join(directory,'ten-minute-synthetic.mp4');
+ await promisify(execFile)('ffmpeg',['-y','-v','error','-f','lavfi','-i','color=c=black:s=64x64:r=1:d=600','-c:v','libx264','-pix_fmt','yuv420p',longFile]);
+ const longForm=new FormData(); longForm.append('video',new Blob([await readFile(longFile)],{type:'video/mp4'}),'ten-minute-synthetic.mp4');
+ const longResponse=await fetch(base+'/api/projects',{method:'POST',headers:{Cookie:cookie},body:longForm});
+ assert.equal(longResponse.status,201); const longProject:Project=await longResponse.json();
+ assert.equal(longProject.video.duration,600);
+ assert.equal(longProject.plan!.segments[0].end,600,'Upload must initialize the whole source');
+ const health=await (await fetch(base+'/api/health')).json(); assert.equal(health.maxAiSourceSeconds,1200,'Deprecated pilot setting must not limit long uploads');
+ for(const format of ['vertical','portrait','landscape']) {
+  const saved=await fetch(base+`/api/projects/${longProject.id}/edit`,{...post({plan:longProject.plan,captions:[],format,fit:'contain',feedback:'',editMode:'captions'},cookie),method:'PUT'});
+  assert.equal(saved.status,200,'A long edit must work in '+format);
+ }
+ const legacy={...longProject,targetSeconds:90}; delete legacy.plan;
+ await writeFile(path.join(directory,'projects',longProject.id+'.json'),JSON.stringify(legacy));
+ const migrated:Project=await (await fetch(base+`/api/projects/${longProject.id}`,{headers:{Cookie:cookie}})).json();
+ assert.equal(migrated.plan!.segments[0].end,600,'An existing upload must not inherit the old 90-second target');
+
+ project.captionReview = 'automatic';
+ await writeFile(path.join(directory,'projects',project.id+'.json'),JSON.stringify(project));
  const edit = {plan: {...project.plan!, title: 'Persisted API test'}, captions: project.captions!.map((c, i) => i ? c : {...c, zh: '已保存的中文字幕。'}), format: 'landscape', fit: 'contain', feedback: 'Keep complete explanations.'};
  const update = (value: unknown) => ({...post(value, cookie), method: 'PUT'});
  const url = base + `/api/projects/${project.id}/edit`;
- assert.equal((await fetch(url, update(edit))).status, 200);
+ const edited=await fetch(url,update(edit)); assert.equal(edited.status,200);
+ assert.equal((await edited.json()).captionReview,undefined,'Manual corrections must clear the old automatic-review status');
  const invalid = {...edit, captions: edit.captions.map((c, i) => i ? {...c, start: 0} : c)};
  assert.equal((await fetch(url, update(invalid))).status, 400);
  assert.equal((await fetch(url, {...update(edit), headers: {...update(edit).headers, Origin: 'https://unrelated.example'}})).status, 403);
@@ -58,6 +80,6 @@ try {
  assert.equal(returned.format, 'landscape'); assert.equal(returned.feedback, edit.feedback);
  assert.deepEqual(returned.captions, edit.captions, 'Rejected edits must not partially overwrite saved subtitles');
  assert.ok((await readFile(path.join(directory, 'jobs.sqlite'))).length > 0);
- console.log('PASS: production cookie flags, private media/API/download boundaries, sign-in, real file upload, atomic bilingual edits, cross-origin rejection, missing-key behavior, and persistence after server restart.');
+ console.log('PASS: production cookie flags, private media/API/download boundaries, sign-in, real file upload, atomic bilingual edits, cross-origin rejection, missing-key behavior, persistence after server restart, and an actual ten-minute upload retained in all aspect ratios.');
  console.log('This API check does not verify browser sign-in, MP4 rendering, or live AI.');
 } finally {await stop();}

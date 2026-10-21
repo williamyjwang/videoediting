@@ -6,7 +6,7 @@ import path from 'node:path';
 import {existsSync} from 'node:fs';
 import {rm, rename} from 'node:fs/promises';
 import {z} from 'zod';
-import {MAX_SOURCE_SECONDS, planSchema, projectEditSchema, validateCaptions, validatePlan, type Project} from '../src/shared';
+import {MAX_SOURCE_SECONDS, editModeSchema, fullLengthPlan, planSchema, projectEditSchema, validateCaptions, validatePlan, type Project} from '../src/shared';
 import {aiConfigured, generateEdit} from './ai';
 import {createSample, probe} from './media';
 import {dataDir, exportDir, initializeStorage, listProjects, mediaDir, readProject, saveProject} from './store';
@@ -17,7 +17,7 @@ import {startWorker} from './worker';
 await initializeStorage();
 const app = express();
 const port = Number(process.env.PORT || 3001);
-const maxAiSeconds = z.coerce.number().int().min(1).max(MAX_SOURCE_SECONDS).parse(process.env.MCC_AI_MAX_SOURCE_SECONDS || 60);
+const maxAiSeconds = MAX_SOURCE_SECONDS;
 const queue = new JobQueue(path.join(dataDir, 'jobs.sqlite'));
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 app.disable('x-powered-by');
@@ -44,7 +44,7 @@ app.post('/api/demo', async (_req, res) => {
   const fileName = `${id}.mp4`;
   await createSample(path.join(mediaDir, fileName));
   const project: Project = {id, createdAt: new Date().toISOString(), video: {id, name: 'Synthetic studio sample.mp4', url: `/media/${fileName}`, duration: 6, kind: 'video'},
-    brief: '', targetSeconds: 45, status: 'idle',
+    brief: '', editMode: 'captions', status: 'idle',
     plan: {title: 'MCC studio sample', hook: 'A preview of your next edit.', segments: [{start: 0, end: 3, label: 'SYNTHETIC DEMO'}, {start: 4, end: 6, label: 'UPLOAD YOUR OWN FOOTAGE'}]},
     words: ['Sample', 'captions.', 'Your', 'story', 'goes', 'here.'].map((word, i) => ({word, start: i * 0.8, end: i * 0.8 + 0.7})),
     captions: [{id: 'sample-1', start: 0, end: 1.55, en: 'Sample captions.', zh: '示例字幕。'}, {id: 'sample-2', start: 1.55, end: 4.8, en: 'Your story goes here.', zh: '在这里讲述你的故事。'}], format: 'vertical', fit: 'contain',
@@ -64,7 +64,7 @@ app.post('/api/projects', upload.single('video'), async (req, res) => {
     if (!['.mp4', '.mov', '.webm', '.mkv', '.m4v'].includes(extension)) throw new Error('Use MP4, MOV, WebM, MKV, or M4V footage.');
     const fileName = `${id}${extension}`;
     await rename(req.file.path, path.join(mediaDir, fileName));
-    const project: Project = {id, createdAt: new Date().toISOString(), video: {id, name: req.file.originalname, url: `/media/${fileName}`, duration: info.duration, kind: 'video'}, brief: '', targetSeconds: 45, words: [], status: 'idle'};
+    const project: Project = {id, createdAt: new Date().toISOString(), video: {id, name: req.file.originalname, url: `/media/${fileName}`, duration: info.duration, kind: 'video'}, brief: '', editMode: 'captions', words: [], status: 'idle', plan: fullLengthPlan(info.duration, req.file.originalname)};
     await saveProject(project);
     res.status(201).json(project);
   } catch (error) {await rm(req.file.path, {force: true}); res.status(400).json({error: message(error)});}
@@ -89,6 +89,7 @@ app.put('/api/projects/:id/edit', async (req, res) => {
   const edit = projectEditSchema.extend({plan: planSchema}).parse(req.body);
   validateCaptions(edit.captions, project.video.duration);
   validatePlan(edit.plan, project.video.duration, edit.format);
+  if (JSON.stringify(edit.captions) !== JSON.stringify(project.captions || [])) project.captionReview = undefined;
   Object.assign(project, edit, {error: undefined, exportUrl: undefined});
   await saveProject(project); res.json(project);
 });
@@ -111,13 +112,14 @@ app.post('/api/projects/:id/music', upload.single('music'), async (req, res) => 
   } catch (error) {await rm(req.file.path, {force: true}); res.status(400).json({error: message(error)});}
 });
 
-const analyzeBody = z.object({brief: z.string().max(3000), targetSeconds: z.number().min(5).max(180)});
+const analyzeBody = z.object({brief: z.string().max(3000), editMode: editModeSchema.default('captions')});
 app.post('/api/projects/:id/analyze', async (req, res) => {
   if (!aiConfigured()) {res.status(409).json({error: 'Set MCC_OPENAI_API_KEY in the server environment, then restart the API. Manual editing and rendering are available without a key.'}); return;}
   const project = await readProject(req.params.id);
   if (queue.active(project.id)) {res.status(409).json({error: 'A job is already running.'}); return;}
-  if (project.video.duration > maxAiSeconds) {res.status(400).json({error: `AI testing is limited to ${maxAiSeconds} seconds of source footage. Manual editing is still available.`}); return;}
+  if (project.video.duration > maxAiSeconds) {res.status(400).json({error: `Source footage can be up to ${maxAiSeconds / 60} minutes long.`}); return;}
   Object.assign(project, analyzeBody.parse(req.body));
+  delete project.targetSeconds;
   project.status = 'analyzing'; project.error = undefined; project.exportUrl = undefined;
   queue.enqueue('analyze', project);
   res.status(202).json(project);

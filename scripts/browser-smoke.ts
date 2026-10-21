@@ -11,6 +11,8 @@ try {
   await page.screenshot({path: '.data/studio-desktop.png', fullPage: true});
   await page.getByRole('button', {name: 'Explore with a sample'}).click();
   await page.getByLabel('Project title').waitFor();
+  assert.equal(await page.getByLabel('Editing approach', {exact: true}).inputValue(), 'captions');
+  assert.equal(await page.getByLabel('Target length', {exact: true}).count(), 0);
   await page.getByLabel('Opening hook').fill('A considered edit.');
   await page.getByRole('button', {name: 'Save edit', exact: true}).click();
   await page.getByText('Edit plan saved.', {exact: true}).waitFor();
