@@ -80,3 +80,15 @@ test('transcription preserves mixed source languages and checkpoints before late
  assert.equal(checkpoint.at(-1)!.word,'中文'); assert.ok(checkpoint.at(-1)!.end>checkpoint.at(-1)!.start);
  assert.equal(durationFrames(result.plan)/FPS,600);
 });
+
+test('provider failures expose actionable categories without credentials', async () => {
+ const {default: OpenAI}=await import('openai');
+ const {publicAiError}=await import('../server/ai');
+ const secret='sk-do-not-log';
+ const authentication=new OpenAI.APIError(401,{message:'Incorrect API key: '+secret},'Incorrect API key: '+secret,new Headers());
+ assert.match(publicAiError(authentication),/rejected the API key/);
+ assert.equal(publicAiError(authentication).includes(secret),false);
+ const quota=new OpenAI.APIError(429,{code:'insufficient_quota',message:secret},secret,new Headers());
+ assert.match(publicAiError(quota),/quota is unavailable/);
+ assert.equal(publicAiError(new Error(secret)).includes(secret),false);
+});

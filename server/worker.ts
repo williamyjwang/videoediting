@@ -1,7 +1,7 @@
 import path from 'node:path';
 import {rm} from 'node:fs/promises';
 import {type Project} from '../src/shared';
-import {generateEdit} from './ai';
+import {generateEdit, publicAiError} from './ai';
 import {extractAudio} from './media';
 import {dataDir, mediaDir, readProject, saveProject} from './store';
 import {renderProject} from './render';
@@ -31,7 +31,7 @@ export function startWorker(queue: JobQueue) {
           project.exportUrl = undefined;
         } finally {await rm(audio, {force: true});}
       }
-    } catch (cause) {error = cause instanceof Error ? cause.message : 'The background operation failed.';}
+    } catch (cause) {error = job.kind === 'analyze' ? publicAiError(cause) : cause instanceof Error ? cause.message : 'The background operation failed.';}
     try {
       project.status = 'idle'; project.error = error;
       await saveProject(project);

@@ -37,7 +37,7 @@ Audio is extracted locally and submitted to [OpenAI's timestamped transcription 
 
 Both planners validate source boundaries and chronological cuts. Light trim has no target duration; a proposal retaining less than 80% of source runtime or 90% of transcript words falls back to the full video. Caption-only always uses the whole source. Automatic translation/review aims for idiomatic North American English and natural Simplified Chinese without changing the speaker's meaning or inventing context. Transcript recognition, cut relevance, and translation quality still need live evaluation. API usage can incur costs for full audio duration and translation/review passes.
 
-Allow `api.openai.com` for transcription/API planning. Codex needs access to the destinations required by its configured authentication/provider. The UI and manual rendering run without these credentials. Neither live AI transcription nor Codex planning has been validated in this environment because no transcription key is present.
+Allow `api.openai.com` for transcription/API planning. Codex needs access to the destinations required by its configured authentication/provider. The UI and manual rendering run without these credentials. A live transcription attempt reached OpenAI but failed with HTTP 401 authentication rejection. No transcript or bilingual output was produced. Live AI quality and Codex planning remain unverified. Provider errors are sanitized before being returned to the browser so authentication errors cannot echo credentials.
 
 ## Brand system
 

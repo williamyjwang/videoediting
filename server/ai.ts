@@ -5,6 +5,18 @@ import {conservativePlan, FPS, fullLengthPlan, planSchema, validateCaptions, typ
 import {planWithCodex} from './codex';
 
 export function aiConfigured() {return Boolean(process.env.MCC_OPENAI_API_KEY || process.env.OPENAI_API_KEY);}
+// Provider authentication errors can echo part of the submitted credential.
+// Persist only actionable categories in the project and browser UI.
+export function publicAiError(cause: unknown): string {
+  if (cause instanceof OpenAI.APIError) {
+    if (cause.status === 401) return 'OpenAI rejected the API key. Check the private server key and restart the studio.';
+    if (cause.code === 'insufficient_quota') return 'OpenAI API quota is unavailable. Check API billing or the project spending limit; no further requests were started.';
+    if (cause.status === 429) return 'OpenAI rate-limited this request. Please retry later.';
+    if (cause.status === 403 || cause.status === 404) return 'The OpenAI project does not have access to the requested model. Check the project permissions and model settings.';
+    return cause.status ? `OpenAI could not complete the request (HTTP ${cause.status}).` : 'The studio could not connect to OpenAI. Check the server connection and retry.';
+  }
+  return (cause instanceof Error ? cause.message : 'The AI operation failed.').replace(/sk-[A-Za-z0-9_-]+/g, '[redacted key]');
+}
 type Dependencies = {client?: OpenAI; planner?: typeof planWithCodex; onTranscript?: (words: Word[]) => Promise<void>};
 export async function generateEdit(project: Project, audioPath: string, dependencies: Dependencies = {}) {
   if (!dependencies.client && !aiConfigured()) throw new Error('Add MCC_OPENAI_API_KEY to the server environment to enable AI editing.');
