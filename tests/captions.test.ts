@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {validateCaptions, validatePlan, type Caption, type EditPlan} from '../src/shared';
-import {captionsForExport, parseSrt, toSrt} from '../src/captions';
+import {captionsForExport, improveCaptionReadability, parseSrt, toSrt} from '../src/captions';
 
 const cues: Caption[] = [{id: 'a', start: 1, end: 3, en: 'A complete thought.', zh: '完整的意思。'}, {id: 'b', start: 4, end: 6, en: 'Keep the context.', zh: '保留上下文。'}];
 test('bilingual SRT round trips content, Unicode and millisecond timing', () => {
@@ -32,6 +32,17 @@ test('all output aspect ratios retain full-length videos', () => {
   assert.doesNotThrow(() => validatePlan(plan, 600, 'vertical'));
   assert.doesNotThrow(() => validatePlan(plan, 600, 'portrait'));
 });
+test('readability cleanup retains all text, coverage, pause boundaries and valid timing', () => {
+ const source: Caption[] = [{id:'a',start:0,end:.5,en:'A rather quick phrase',zh:'说得很快'}, {id:'b',start:.5,end:3,en:'with room to read.',zh:'但有时间读完。'}, {id:'c',start:5,end:5.2,en:'Another quick phrase.',zh:'另一句话。'}];
+ const result=improveCaptionReadability(source,6);
+ assert.equal(result.length,2);
+ assert.equal(result[0].en,source[0].en+' '+source[1].en);
+ assert.equal(result[0].zh,source[0].zh+source[1].zh);
+ assert.deepEqual([result[0].start,result[0].end,result[1].start],[0,3,5]);
+ assert.ok(result[1].end<=5.6+1e-9 && result[1].end>=source[2].end);
+ assert.doesNotThrow(()=>validateCaptions(result,6));
+ assert.equal(source[0].end,.5);
+});
 
 test('subtitle QA flags speech omissions and empty languages, while allowing silent gaps', async () => {
  const {captionQuality} = await import('../src/captions');
@@ -40,4 +51,5 @@ test('subtitle QA flags speech omissions and empty languages, while allowing sil
  assert.match(captionQuality([cues[0]], words)[0], /1 transcript word.*4.00s/);
  assert.ok(captionQuality([{...cues[0], zh: ''}], []).some(s => /one language is empty/.test(s)));
  assert.ok(captionQuality([{...cues[0], end: 1.1}], []).some(s => /too fast/.test(s)));
+ assert.ok(captionQuality([{...cues[0],start:0,end:6}], [{word:'my',start:0,end:6}]).some(s=>/Check for missing speech/.test(s)));
 });

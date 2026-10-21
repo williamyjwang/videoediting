@@ -31,9 +31,29 @@ export function parseSrt(text: string): Caption[] {
   });
 }
 
+export function improveCaptionReadability(captions: Caption[], duration: number): Caption[] {
+  const cues = captions.map(c => ({...c}));
+  const needed = (c: Caption) => Math.max(c.en.length / 24, c.zh.length / 15);
+  const fast = (c: Caption) => needed(c) > c.end - c.start;
+  // Hold short cues a little longer when there is room, without overlapping.
+  cues.forEach((c, i) => {if (fast(c)) c.end = Math.min(Math.max(c.end, c.start + needed(c)), c.end + .4, cues[i + 1]?.start ?? duration);});
+  for (let i = 0; i < cues.length - 1; i++) {
+    const a = cues[i], b = cues[i + 1];
+    const merged = {...a, end: b.end, en: `${a.en} ${b.en}`, zh: `${a.zh}${b.zh}`};
+    // Keep every word and its covered interval; do not merge across long pauses
+    // or turn a readability warning into an oversized two-language block.
+    if ((fast(a) || fast(b)) && b.start - a.end <= .4 && merged.end - merged.start <= 6 && merged.en.length <= 120 && merged.zh.length <= 64 && !fast(merged)) {
+      cues.splice(i, 2, merged); i = Math.max(-1, i - 2);
+    }
+  }
+  return cues;
+}
+
 // These checks flag likely omissions/readability issues; they cannot judge translation meaning.
 export function captionQuality(captions: Caption[], words: import('./shared').Word[]) {
   const issues: string[] = [];
+  const stretched = words.filter(w => w.end - w.start > 2.5 && /^[\p{L}'’-]+$/u.test(w.word) && w.word.length < 30);
+  for (const word of stretched) issues.push(`Transcript timing near ${word.start.toFixed(2)}s: one word spans ${(word.end-word.start).toFixed(1)} seconds. Check for missing speech against the audio.`);
   const missing = words.filter(word => {
     const middle = (word.start + word.end) / 2;
     return !captions.some(c => c.start <= middle && c.end > middle && (c.en.trim() || c.zh.trim()));

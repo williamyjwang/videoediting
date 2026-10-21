@@ -1,7 +1,7 @@
 import path from 'node:path';
 import {rm} from 'node:fs/promises';
 import {type Project} from '../src/shared';
-import {generateEdit, publicAiError} from './ai';
+import {generateEdit, publicAiError, TRANSCRIPT_VERSION} from './ai';
 import {extractAudio} from './media';
 import {dataDir, mediaDir, readProject, saveProject} from './store';
 import {renderProject} from './render';
@@ -23,11 +23,11 @@ export function startWorker(queue: JobQueue) {
       else {
         // Preserve successful transcription across a later translation/planner failure.
         const saved = await readProject(project.id);
-        if (!project.words.length && saved.video.id === project.video.id) project.words = saved.words;
+        if (saved.transcriptVersion === TRANSCRIPT_VERSION && saved.video.id === project.video.id) {project.words = saved.words; project.transcriptVersion = saved.transcriptVersion; project.referenceTranscript = saved.referenceTranscript; project.sourceLanguages = saved.sourceLanguages;}
         const audio = path.join(dataDir, 'tmp', `${job.id}.mp3`);
         try {
           await extractAudio(path.join(mediaDir, path.basename(project.video.url)), audio);
-          Object.assign(project, await generateEdit(project, audio, {onTranscript: async words => {project.words = words; await saveProject(project);}}));
+          Object.assign(project, await generateEdit(project, audio, {onTranscript: async (words, metadata) => {project.words = words; Object.assign(project, metadata); await saveProject(project);}}));
           project.exportUrl = undefined;
         } finally {await rm(audio, {force: true});}
       }

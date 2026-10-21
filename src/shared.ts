@@ -42,6 +42,7 @@ export type Project = {
   progress?: number;
   captions?: Caption[]; format?: OutputFormat; fit?: 'contain' | 'cover'; feedback?: string;
   captionReview?: 'automatic'; editNotice?: string;
+  transcriptVersion?: number; referenceTranscript?: string; sourceLanguages?: string[]; captionTranscriptVersion?: number;
 };
 export type VideoProps = {videoSrc: string; musicSrc?: string; plan: EditPlan; words: Word[]; captions?: Caption[]; format?: OutputFormat; fit?: 'contain' | 'cover'};
 export const framesForSegment = (segment: {start: number; end: number}) =>
