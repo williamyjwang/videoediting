@@ -18,9 +18,12 @@ services:
         value: /var/data
       - key: MCC_EDIT_PROVIDER
         value: codex
+      - key: MCC_AI_MAX_SOURCE_SECONDS
+        value: "60"
       - key: MCC_ADMIN_PASSWORD
         sync: false
       - key: MCC_SESSION_SECRET
         generateValue: true
       - key: MCC_OPENAI_API_KEY
         sync: false
+

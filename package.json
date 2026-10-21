@@ -10,7 +10,8 @@
     "test": "tsx --test tests/*.test.ts",
     "smoke": "tsx scripts/smoke.ts",
     "test:browser": "tsx scripts/browser-smoke.ts",
-    "test:cloud": "tsx scripts/cloud-smoke.ts"
+    "test:cloud": "tsx scripts/cloud-smoke.ts",
+    "test:api": "tsx scripts/api-smoke.ts"
   },
   "dependencies": {
     "@fontsource/inter": "5.3.0",
