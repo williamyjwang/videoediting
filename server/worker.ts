@@ -1,9 +1,9 @@
 import path from 'node:path';
 import {rm} from 'node:fs/promises';
 import {type Project} from '../src/shared';
-import {generateEdit} from './ai';
+import {generateEdit, publicAiError, TRANSCRIPT_VERSION} from './ai';
 import {extractAudio} from './media';
-import {dataDir, mediaDir, saveProject} from './store';
+import {dataDir, mediaDir, readProject, saveProject} from './store';
 import {renderProject} from './render';
 import {type JobQueue} from './queue';
 
@@ -21,14 +21,17 @@ export function startWorker(queue: JobQueue) {
       project.error = undefined;
       if (job.kind === 'render') project.exportUrl = await renderProject(project);
       else {
+        // Preserve successful transcription across a later translation/planner failure.
+        const saved = await readProject(project.id);
+        if (saved.transcriptVersion === TRANSCRIPT_VERSION && saved.video.id === project.video.id) {project.words = saved.words; project.transcriptVersion = saved.transcriptVersion; project.referenceTranscript = saved.referenceTranscript; project.sourceLanguages = saved.sourceLanguages;}
         const audio = path.join(dataDir, 'tmp', `${job.id}.mp3`);
         try {
           await extractAudio(path.join(mediaDir, path.basename(project.video.url)), audio);
-          Object.assign(project, await generateEdit(project, audio));
+          Object.assign(project, await generateEdit(project, audio, {onTranscript: async (words, metadata) => {project.words = words; Object.assign(project, metadata); await saveProject(project);}}));
           project.exportUrl = undefined;
         } finally {await rm(audio, {force: true});}
       }
-    } catch (cause) {error = cause instanceof Error ? cause.message : 'The background operation failed.';}
+    } catch (cause) {error = job.kind === 'analyze' ? publicAiError(cause) : cause instanceof Error ? cause.message : 'The background operation failed.';}
     try {
       project.status = 'idle'; project.error = error;
       await saveProject(project);

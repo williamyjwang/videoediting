@@ -28,8 +28,9 @@ async function stop() {
   if (server && server.exitCode === null) {const exit = new Promise(resolve => server.once('exit', resolve)); server.kill('SIGTERM'); await exit;}
 }
 await start();
-const browser = await chromium.launch({executablePath: '/usr/bin/chromium', headless: true, args: ['--no-sandbox']});
+let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
 try {
+  browser = await chromium.launch({executablePath: process.env.REMOTION_BROWSER_EXECUTABLE || '/usr/bin/chromium', headless: true, args: ['--no-sandbox']});
   assert.equal((await fetch(base + '/api/projects')).status, 401);
   assert.equal((await fetch(base + '/media/private.mp4')).status, 401);
   assert.equal((await fetch(base + '/exports/private.mp4')).status, 401);
@@ -79,4 +80,4 @@ try {
   assert.ok((await readFile(path.join(directory, 'jobs.sqlite'))).length > 0);
   console.log('PASS: private sign-in/media/downloads, browser closed, server restarted, durable queued render completed, and a new browser session found/downloaded the result.');
   console.log(`Evidence: ${directory}`);
-} finally {await browser.close(); await stop();}
+} finally {await browser?.close(); await stop();}

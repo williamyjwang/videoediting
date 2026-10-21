@@ -1,7 +1,7 @@
 import {mkdir, readdir, readFile, rename, writeFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import path from 'node:path';
-import {type Project} from '../src/shared';
+import {fullLengthPlan, type Project} from '../src/shared';
 
 export const dataDir = path.resolve(process.env.MCC_DATA_DIR || '.data');
 export const mediaDir = path.join(dataDir, 'media');
@@ -21,6 +21,8 @@ export async function listProjects(): Promise<Project[]> {
 }
 export async function readProject(id: string): Promise<Project> {
   if (!/^[a-f0-9-]{36}$/.test(id)) throw Object.assign(new Error('Project not found.'), {status: 404});
-  try {return JSON.parse(await readFile(path.join(projectDir, `${id}.json`), 'utf8'));}
+  try {const project: Project = JSON.parse(await readFile(path.join(projectDir, `${id}.json`), 'utf8'));
+    if (!project.plan) project.plan = fullLengthPlan(project.video.duration, project.video.name);
+    return project;}
   catch {throw Object.assign(new Error('Project not found.'), {status: 404});}
 }

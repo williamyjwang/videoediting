@@ -21,9 +21,10 @@ export async function renderProject(project: Project) {
   const origin = `http://127.0.0.1:${address.port}`;
   try {
   const browserExecutable = process.env.REMOTION_BROWSER_EXECUTABLE || (existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined);
-  const props: VideoProps = {videoSrc: origin + project.video.url, musicSrc: project.music ? origin + project.music.url : undefined, plan: project.plan, words: project.words};
+  const props: VideoProps = {videoSrc: origin + project.video.url, musicSrc: project.music ? origin + project.music.url : undefined, plan: project.plan, words: project.words, captions: project.captions, format: project.format, fit: project.fit};
   // Rebundle once per process. Restart the API after changing templates.
-  bundled ??= bundle({entryPoint: path.resolve('src/remotion/Root.tsx')}).catch(error => {bundled = undefined; throw error;});
+  // The in-process promise already caches the bundle; avoid a second disk cache.
+  bundled ??= bundle({entryPoint: path.resolve('src/remotion/Root.tsx'), enableCaching: false}).catch(error => {bundled = undefined; throw error;});
   const serveUrl = await bundled;
   const composition = await selectComposition({serveUrl, id: 'MCCVideo', inputProps: props, browserExecutable});
   const name = `${project.id}-${Date.now()}.mp4`;
