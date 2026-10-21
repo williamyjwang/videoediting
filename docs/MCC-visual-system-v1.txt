@@ -1,0 +1,132 @@
+MCC VISUAL IDENTITY SYSTEM / MCC 品牌视觉系统
+Version 1.0 | 2026-10-19 | Status: PROPOSED — pending MCC approval
+Owner: To assign | Source: MCC Sales Deck (6 pages), two recent Xiaohongshu Blue-V visual posts, and MCC brand positioning.
+IMPORTANT: This document is a design proposal, not an approved current-facts or offer sheet. Existing MCC logo artwork must be used; text mockups are not official logo files. No student imagery or claims are approved by this document.
+
+01 — BRAND FOUNDATION / 品牌定位
+Direction: Modern Prestige / 现代精英质感.
+Values: Premium (高端), Modern (现代), Confident (自信), Human (真实有温度).
+English: A modern international coaching and personal development brand combining the sophistication of a private club with the approachability of a lifestyle brand.
+中文：兼具国际精英社群的品质感、现代教育品牌的专业度与真实生活方式品牌的亲和力。
+Visual principle: One Brand. One Visual Language. One Consistent Experience.
+Reference positioning: Confidence. Connection. Presence. / 自信表达、真实连接、个人影响力.
+Brand line appearing in deck: Build English into your life. Any new slogan requires approval.
+
+02 — COLOR PALETTE / 色彩系统
+MCC Black #0D0D0D — primary dark background / 主背景.
+Signature Gold #C7A36B — accents, key words, rules, approved logo variants / 金色强调.
+Warm Ivory #F5F2EB — light backgrounds, dark-mode main text / 暖白.
+Graphite #242424 — secondary dark surface / 深灰.
+Stone Gray #A7A29A — secondary text, neutral elements / 中性灰.
+Espresso #302820 — warm atmospheric accent / 暖棕.
+Indicative brand-wide composition: Black 55%, Ivory 25%, Gold 12%, Neutrals 8%. This is NOT a per-artwork requirement.
+Gold is an accent, not a full-page default; avoid gold paragraphs, loud metallic gradients, and low-contrast small gold text on ivory.
+For print: derive and proof CMYK/spot values with the printer; HEX values alone are not print specifications.
+
+03 — TYPOGRAPHY / 字体
+Exactly two everyday typeface families:
+English: Inter.
+Simplified Chinese: Noto Sans SC.
+Display: Bold; headings: Semibold; body: Regular; labels: Medium; captions: Regular.
+No arbitrary third fonts, faux bold, stretched lettering or inconsistent tracking.
+Existing MCC logo is a separate vector artwork; never reconstruct its letterforms in Inter.
+Editorial serif is NOT part of the everyday system. Exceptional campaign typography requires approval.
+Starting size ranges (adjust after actual preview):
+Desktop web H1 48–72 px, body 16–20 px.
+Mobile web H1 32–44 px, body 16–18 px.
+Xiaohongshu cover headline 60–100 px, supporting text 30–42 px at 1080 px width.
+Vertical video subtitles 42–58 px at 1080 × 1920.
+Sales deck titles 36–54 pt, body 18–24 pt.
+Always prioritize legibility, mobile preview and accessible contrast.
+
+04 — LOGO / 标志
+Preserve original MCC logo geometry.
+Approved-design candidate variants to prepare from official vector: Gold on Black; Ivory on Black; Black on Ivory; Monochrome.
+Initial proposed clear space: at least 25% of logo height on each side; confirm against original vector.
+Do not distort, recolor arbitrarily, add drop shadows, outlines or uncontrolled gradients.
+Store master SVG/PDF and transparent PNG exports in the official brand asset library.
+
+05 — PHOTOGRAPHY / 摄影
+Art direction: Cinematic Realism / 电影感真实摄影.
+Primary subjects: authentic conversations, international friendships, professional communication, everyday cafés, modern offices, real networking environments.
+Look: neutral-warm color temperature, moderately strong contrast with preserved shadow detail, gently restrained saturation, realistic skin tones, soft natural or warm ambient light.
+Avoid neon-blue/purple filters, over-retouching, staged luxury stereotypes and false representation of MCC students or events.
+Use real licensed/consented photography wherever possible. AI concepts must not be represented as real students or MCC events.
+Image categories: Social Connection; Professional Presence; Everyday English; Brand Atmosphere.
+
+06 — XIAOHONGSHU / SOCIAL CONTENT
+Standard portrait post: 1080 × 1440 (3:4). Check platform crop and safe areas.
+Template A — Lifestyle Editorial / 生活方式：real photo + subtle dark gradient + ivory/gold title. Small talk, networking, social situations.
+Template B — Educational Insight / 知识观点：black or graphite background, bold concise headline, gold emphasis. Communication, pronunciation, cross-cultural insights.
+Template C — Institutional Framework / 品牌体系：ivory background, black copy, restrained gold numbers/rules. MCC methodology, frameworks, announcements.
+All templates share the same official logo, Inter/Noto Sans SC, palette, spacing logic and CTA rules.
+Do not imply small talk or networking are separate products unless formally approved.
+
+07 — VIDEO DESIGN / 视频视觉
+Vertical short-form: 1080 × 1920 (9:16). Horizontal video: 1920 × 1080 (16:9).
+Logo in consistent corner with safe margins; never obscure faces.
+Chinese subtitles: Noto Sans SC Medium/Semibold. English: Inter Medium/Semibold.
+Subtitle foreground: Warm Ivory #F5F2EB; highlighted words: Signature Gold #C7A36B; use semi-transparent black backing where necessary.
+Open: concise hook; end card: official MCC logo plus currently approved CTA.
+Transitions: clean cuts, soft fades, restrained motion; avoid bouncing rainbow captions and excessive zooms.
+Speaker and real demonstrations remain visually dominant.
+Grading reference: slightly warm, mildly desaturated, moderate/high contrast; tune to camera and lighting rather than applying fixed settings indiscriminately.
+
+08 — WEBSITE / 网站
+Recommended section rhythm: Dark Hero → Light Content → Dark CTA.
+Dark hero: brand line, concise value proposition, gold primary action.
+Light content: ivory surfaces, black text, structured cards, readable body copy.
+Dark CTA: focused conversion section with verified current enrollment action.
+Primary button: Gold background #C7A36B with near-black text; secondary button: outlined/transparent.
+Use restrained corner radii, thin neutral/gold dividers, consistent spacing and subtle fades.
+Test WCAG contrast and mobile accessibility; gold small text on ivory is discouraged.
+Web UI should not be all-black: alternating surfaces improve sustained reading.
+
+09 — SALES DECK / MARKETING COLLATERAL
+Three standardized slide families:
+Cover — Black background, strong ivory heading, minimal gold accent.
+Content — Ivory background, black body text, gold section accents and readable charts.
+Section Divider — Graphite/Black, large section number, clear heading.
+Apply consistently to sales decks, course guides, WeChat long-form images, downloadable PDFs and event collateral.
+The six-page supplied sales deck is a visual reference, NOT authoritative verification of duration, coaching inclusions or outcomes.
+
+10 — PRODUCTION SIZES / 制作尺寸
+Xiaohongshu portrait: 1080 × 1440.
+Douyin / Reels / Shorts / Xiaohongshu vertical video: 1080 × 1920.
+YouTube horizontal: 1920 × 1080.
+Sales deck: 16:9 widescreen.
+WeChat long image: 1080 px wide, variable height.
+Website: responsive desktop and mobile.
+Print: physical dimensions, bleed, CMYK and proofing to be set per vendor.
+All placements require platform-specific crop and safe-area QA.
+
+11 — GOVERNANCE / 品牌管理
+Recommended library:
+01 Official Logos
+02 Color & Typography
+03 Social Media Templates
+04 Video Editing Assets
+05 Sales Deck Templates
+06 Website UI Components
+07 Photography & Media
+08 Brand Guidelines & Archive
+Assign a brand owner. Publish approved master assets and templates, control revisions, and require review before introducing new fonts/colors/logo variants.
+Pre-publication checklist: official logo; correct HEX colors; correct typefaces; genuine licensed imagery; consistent layout and safe areas; approved claims, CTA and program details.
+Versioning: mark this document PROPOSED until explicitly approved; after approval update 03 — Marketing & Brand Guidelines and record decision in 05 — MCC Change Log. Do not overwrite 00 — MCC Current Facts with proposed design rules.
+
+12 — DESIGN TOKENS / 设计令牌
+brand.style = Modern Prestige
+color.black = #0D0D0D
+color.gold = #C7A36B
+color.ivory = #F5F2EB
+color.graphite = #242424
+color.stone = #A7A29A
+color.espresso = #302820
+font.en = Inter
+font.zh = Noto Sans SC
+font.heading = Bold / Semibold
+font.body = Regular / Medium
+imagery = Cinematic Realism
+website.structure = Dark Hero / Light Content / Dark CTA
+social.templates = Lifestyle / Educational / Institutional
+video.subtitles = Warm Ivory + Gold highlights
